@@ -1,2 +1,2 @@
 
-site_url = "https://www.yahoo.com"
+site_url = "http://www.google.com"

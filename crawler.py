@@ -1,14 +1,16 @@
 from Queue import Queue, Empty
 from urlparse import urljoin
-from multiprocessing import Pool
+from multiprocessing import Pool, Lock
 import time
 
 from bs4 import BeautifulSoup
 import requests
 
 
+
 def request(url, download_delay):
     time.sleep(download_delay)
+    print(url)
     response = requests.get(url)
     return response
 
@@ -43,7 +45,7 @@ class Crawler(object):
     ANCHOR_TAG = "a"
     HREF = "href"
 
-    def __init__(self, base_url, max_pages_to_crawl=10):
+    def __init__(self, base_url,  max_pages_to_crawl=10, lock=None):
         self.max_pages_to_crawl = max_pages_to_crawl
         self.unique_pages = []
         self.bytes_downloaded = 0
@@ -53,6 +55,8 @@ class Crawler(object):
         self.url_queue = Queue()
         self.url_queue.put(base_url)
         self.unique_pages.append(base_url)
+
+        self.lock = lock
 
     def parse(self, response):
         """
@@ -72,8 +76,11 @@ class Crawler(object):
                 self.unique_pages.append(url)
 
     def update_stats(self, response):
+        self.lock and self.lock.acquire()
         self.bytes_downloaded += len(response.content)
         self.total_page_visited += 1
+        self.lock and self.lock.release()
+
 
     def max_limit_reached(self):
         return len(self.unique_pages) >= self.max_pages_to_crawl
